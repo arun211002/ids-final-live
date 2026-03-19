@@ -1,0 +1,6 @@
+# fastapi>=0.115.0
+pip install flask tinydb
+uvicorn>=0.30.0
+tinydb>=4.8.0
+jinja2>=3.1.2
+
