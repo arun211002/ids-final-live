@@ -1,0 +1,233 @@
+<!-- <!DOCTYPE html>
+<html>
+<head><title>Vulnerable XSS Test</title></head>
+<body>
+    <h1>Reflected XSS Demo Page</h1>
+    <form action="/check" method="get">
+        <label>Enter text:</label>
+        <input type="text" name="input" style="width:300px;">
+        <button type="submit">Submit</button>
+    </form>
+    <p>Try payload like:  
+       <code>&lt;img src=x onerror=alert('XSS')&gt;</code>
+    </p>
+</body>
+</html> -->
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Security Lab — XSS Test Playground</title>
+  <!--
+    Notes / deployment
+    - ALWAYS sanitize on server side. Never reflect raw input into pages without encoding.
+    - Serve a strong Content-Security-Policy header (example below) from the server, not via meta in production:
+      Content-Security-Policy: default-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self';
+    - Set X-Content-Type-Options: nosniff and X-Frame-Options: DENY on the server.
+  -->
+  <style>
+    :root{
+      --bg:#0f1724; /* dark navy */
+      --card:#0b1220;
+      --accent:#06b6d4; /* teal */
+      --accent-2:#7c3aed; /* purple */
+      --muted:#98a1b2;
+      --glass: rgba(255,255,255,0.03);
+      --radius:14px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0px;
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(7,18,29,0.5), transparent),
+                  linear-gradient(180deg, var(--bg), #071022 150%);
+      color:#e6eef6;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 50px;
+    }
+
+    .container{
+      width:100%;
+      max-width:980px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:var(--radius);
+      box-shadow: 0 10px 30px rgba(2,6,23,0.7);
+      overflow:hidden;
+      display:grid;
+      grid-template-columns: 380px 1fr;
+    }
+
+    header.card-left{
+      padding:100px;
+      background: linear-gradient(135deg, rgba(7,20,30,0.7), rgba(10,14,20,0.55));
+      border-right:1px solid rgba(255,255,255,0.03);
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+      min-height:300px;
+    }
+
+    .logo{
+      display:flex;gap:12px;align-items:center
+    }
+    .logo svg{width:44px;height:44px}
+    .brand{font-weight:700;font-size:18px}
+    .tag{color:var(--muted);font-size:13px}
+
+    h1{font-size:20px;margin:0}
+    p.lead{color:var(--muted);margin:0 0 6px 0}
+
+    form{display:flex;flex-direction:column;gap:12px;margin-top:6px}
+    label{font-size:13px;color:var(--muted)}
+    input[type="text"]{
+      width:100%;
+      padding:12px 14px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.04);
+      background:var(--glass);
+      color:inherit;
+      outline:none;
+      font-size:14px;
+      transition:box-shadow .18s, transform .08s;
+    }
+    input[type="text"]:focus{box-shadow:0 6px 20px rgba(6,182,212,0.08);transform:translateY(-1px)}
+
+    .row{display:flex;gap:10px}
+    .btn{
+      padding: 25px;border-radius:10px;border:none;cursor:pointer;font-weight:600;
+      background:linear-gradient(90deg,var(--accent),var(--accent-2));color:#021019;
+      box-shadow:0 6px 18px rgba(124,58,237,0.12);
+    }
+
+    .btn.secondary{background:transparent;border:1px solid rgba(255,255,255,0.04);color:var(--muted)}
+
+    .card-right{
+      padding:28px 26px;
+      min-height:300px;
+      display:flex;flex-direction:column;gap:16px;
+    }
+
+    .info{
+      display:flex;gap:12px;align-items:center;flex-wrap:wrap
+    }
+    .example{background:rgba(255,255,255,0.02);padding:10px;border-radius:8px;font-family:monospace;color:#dbeafe}
+
+    .preview{
+      margin-top:6px;padding:12px;border-radius:8px;background:linear-gradient(180deg, rgba(255,255,255,0.015), rgba(255,255,255,0.01));
+      border:1px dashed rgba(255,255,255,0.03);min-height:74px;display:flex;align-items:center;justify-content:center;text-align:center;color:var(--muted)
+    }
+
+    .notes{font-size:13px;color:var(--muted);line-height:1.45}
+
+    .footer{margin-top:auto;color:var(--muted);font-size:13px;display:flex;justify-content:space-between;align-items:center}
+
+    @media (max-width:880px){
+      .container{grid-template-columns:1fr;}
+      header.card-left{border-right:0}
+    }
+  </style>
+</head>
+<body>
+  <div class="container" role="main">
+    <div class="card-left">
+      <div class="logo">
+        <svg viewBox="0 0 48 48" fill="none" aria-hidden="true" focusable="false">
+          <rect width="48" height="48" rx="10" fill="url(#g)" />
+          <defs>
+            <linearGradient id="g" x1="0" x2="1">
+              <stop offset="0" stop-color="#06b6d4" />
+              <stop offset="1" stop-color="#7c3aed" />
+            </linearGradient>
+          </defs>
+        </svg>
+        <div>
+          <div class="brand">Security Lab</div>
+          <div class="tag">XSS Test Playground</div>
+        </div>
+      </div>
+
+      <h1>Safe input testing</h1>
+      <p class="lead">This sandbox accepts input for demonstration. The preview below is intentionally safe — it renders text only (no HTML execution).</p>
+
+      <form id="testForm" action="/check" method="get" novalidate>
+        <label for="input">Enter payload or URL</label>
+        <input id="input" name="input" type="text" maxlength="1024" placeholder="&lt;script&gt;... or https://example.com" inputmode="verbatim" autocomplete="off" />
+        <div class="row">
+          <button type="submit" class="btn">Submit (server)</button>
+          <button type="button" id="previewBtn" class="btn secondary">Preview (safe)</button>
+        </div>
+      </form>
+
+      <div style="display:flex;gap:8px;flex-direction:column;margin-top:8px">
+        <div class="notes">Server-side security checklist:
+          <ul>
+            <li>Sanitize &amp; encode all reflected values before rendering.</li>
+            <li>Use strong CSP, X-Frame-Options, and X-Content-Type-Options headers.</li>
+            <li>Validate input length and type on server.</li>
+            <li>Log suspicious payloads and rate-limit submissions.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-right">
+      <div class="info">
+        <div style="flex:1">
+          <div style="font-weight:700">Preview (safe)</div>
+          <div id="preview" class="preview">Nothing to preview — click &quot;Preview (safe)&quot;.</div>
+        </div>
+        <div style="width:220px">
+          <div style="font-weight:700">Example payloads</div>
+          <div class="example">&lt;img src=x onerror=alert('XSS')&gt;</div>
+          <div class="example">&lt;script&gt;alert(1)&lt;/script&gt;</div>
+        </div>
+      </div>
+
+      <div class="notes">
+        <strong>Important:</strong> The preview button shows a text-escaped rendering to avoid any accidental execution. Always assume the server must enforce escaping and other defenses.
+      </div>
+
+      <div class="footer">
+        <div>Mode: <strong>Testing</strong></div>
+        <div style="font-size:12px;color:var(--muted)">Built for security teams</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Client-side: NEVER rely on this for security. Server must validate/sanitize.
+    (function(){
+      const previewBtn = document.getElementById('previewBtn');
+      const preview = document.getElementById('preview');
+      const input = document.getElementById('input');
+
+      previewBtn.addEventListener('click', ()=>{
+        // Render only as text to avoid executing HTML/JS from input
+        const value = input.value || '';
+        // Shorten long inputs to keep UI tidy
+        const trimmed = value.length > 800 ? value.slice(0,800) + '…' : value;
+        preview.textContent = trimmed || 'Nothing to preview — enter something.';
+      });
+
+      // Helpful UX: preview on Enter without submitting form
+      input.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter'){
+          e.preventDefault();
+          previewBtn.click();
+        }
+      });
+
+      // Example: disable autocompletion leakage to protect testing data
+      input.setAttribute('autocomplete','off');
+    })();
+  </script>
+</body>
+</html>
