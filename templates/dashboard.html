@@ -1,32 +1,44 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>IDS Dashboard</title>
-    <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #0f172a; color: white; padding: 40px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: #1e293b; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #334155; }
-        th { background: #334155; color: #38bdf8; }
-        .badge { background: #7f1d1d; color: #f87171; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
-    </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body>
-    <h1>🛡️ XSS Intrusion Detection Logs</h1>
-    <table>
-        <tr>
-            <th>Time</th>
-            <th>Detection Method</th>
-            <th>Payload</th>
-        </tr>
-        {% for log in logs %}
-        <tr>
-            <td>{{ log.time }}</td>
-            <td><span class="badge">{{ log.method }}</span></td>
-            <td><code>{{ log.payload }}</code></td>
-        </tr>
-        {% endfor %}
-    </table>
-    <br>
-    <a href="/" style="color: #38bdf8;">Return to Scanner</a>
+<body class="bg-dark text-white">
+    <div class="container mt-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3">📊 Real-Time Attack Logs</h1>
+            <a href="/" class="btn btn-outline-light btn-sm">Home</a>
+        </div>
+
+        <div class="table-responsive shadow-lg">
+            <table class="table table-dark table-hover border-secondary">
+                <thead class="table-secondary text-dark">
+                    <tr>
+                        <th>Time</th>
+                        <th>Attack Payload</th>
+                        <th>Source IP</th>
+                        <th>Result</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td><small>{{ log.timestamp }}</small></td>
+                        <td><code class="text-info">{{ log.payload }}</code></td>
+                        <td>{{ log.ip }}</td>
+                        <td><span class="badge bg-danger">Blocked</span></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center text-muted">No attacks detected yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </body>
 </html>
