@@ -14,6 +14,7 @@
             --neon-cyan: #00ffcc;
             --dark-bg: #060606;
             --card-bg: rgba(17, 17, 17, 0.95);
+            --timestamp-color: #ffffff; /* High visibility color */
         }
 
         body { 
@@ -25,10 +26,8 @@
             background-size: cover;
             background-attachment: fixed;
             min-height: 100vh;
-            overflow-x: hidden;
         }
 
-        /* --- NAVIGATION --- */
         .navbar-custom {
             background: rgba(0, 0, 0, 0.85);
             border-bottom: 2px solid var(--neon-cyan);
@@ -42,17 +41,10 @@
             margin-right: 15px;
         }
 
-        /* --- STAT CARDS --- */
         .card { 
             background: var(--card-bg); 
             border: 1px solid #333; 
             border-radius: 12px;
-            transition: 0.3s ease;
-        }
-
-        .card:hover {
-            border-color: var(--neon-cyan);
-            box-shadow: 0 0 20px rgba(0, 255, 204, 0.15);
         }
 
         .card-header-custom {
@@ -60,17 +52,14 @@
             border-bottom: 1px solid #333;
             padding: 15px 20px;
             color: var(--neon-cyan);
-            font-size: 0.9rem;
-            letter-spacing: 1px;
-            display: flex;
-            justify-content: space-between;
         }
 
-        /* --- TABLE DESIGN --- */
-        .table-container {
-            border-radius: 10px;
-            overflow: hidden;
-            border: 1px solid #333;
+        /* --- UPDATED TIMESTAMP STYLE --- */
+        .timestamp-entry {
+            color: var(--timestamp-color) !important;
+            font-weight: 500;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+            font-size: 0.85rem;
         }
 
         .table-dark { 
@@ -84,12 +73,10 @@
             border-bottom: 2px solid #333;
             text-transform: uppercase;
             font-size: 0.75rem;
-            padding: 15px;
         }
 
         .table-dark tbody td {
             border-bottom: 1px solid #222;
-            font-size: 0.85rem;
             padding: 15px;
             vertical-align: middle;
         }
@@ -99,29 +86,6 @@
             color: var(--neon-cyan);
             background: transparent;
             padding: 5px 12px;
-            text-transform: uppercase;
-            font-size: 0.7rem;
-        }
-
-        /* --- CHART SETTINGS --- */
-        .chart-container {
-            position: relative;
-            height: 250px;
-            width: 100%;
-        }
-
-        .btn-exit {
-            border: 1px solid var(--neon-cyan);
-            color: var(--neon-cyan);
-            font-size: 0.7rem;
-            padding: 5px 15px;
-            text-decoration: none;
-            transition: 0.3s;
-        }
-
-        .btn-exit:hover {
-            background: var(--neon-cyan);
-            color: #000;
         }
     </style>
 </head>
@@ -131,11 +95,11 @@
     <div class="container d-flex justify-content-between align-items-center">
         <div class="d-flex align-items-center">
             <img src="{{ url_for('static', filename='logo.png') }}" alt="MICE" class="dashboard-logo">
-            <h3 class="mb-0" style="letter-spacing: 2px;">MICE <span class="fw-light">COMMAND</span></h3>
+            <h3 class="mb-0">MICE <span class="fw-light">COMMAND</span></h3>
         </div>
-        <div class="d-flex align-items-center">
-            <span class="me-3 small text-uppercase" style="color: var(--neon-cyan);">Total Blocks: {{ chart_data.total_count }}</span>
-            <a href="/" class="btn-exit">Term_Exit</a>
+        <div>
+            <span class="badge badge-neon">Total Blocks: {{ chart_data.total_count }}</span>
+            <a href="/" class="btn btn-outline-info btn-sm ms-3" style="font-size: 0.7rem;">TERMINAL_EXIT</a>
         </div>
     </div>
 </nav>
@@ -144,22 +108,16 @@
     <div class="row g-4 mb-4">
         <div class="col-lg-6">
             <div class="card h-100">
-                <div class="card-header-custom">
-                    <span>DETECTION ANALYSIS</span>
-                    <small>Doughnut_View</small>
-                </div>
-                <div class="card-body chart-container">
+                <div class="card-header-custom">DETECTION ANALYSIS</div>
+                <div class="card-body" style="height: 250px;">
                     <canvas id="typeChart"></canvas>
                 </div>
             </div>
         </div>
         <div class="col-lg-6">
             <div class="card h-100">
-                <div class="card-header-custom">
-                    <span>ATTACK SOURCES (IP)</span>
-                    <small>Bar_Graph</small>
-                </div>
-                <div class="card-body chart-container">
+                <div class="card-header-custom">ATTACK SOURCES (IP)</div>
+                <div class="card-body" style="height: 250px;">
                     <canvas id="ipChart"></canvas>
                 </div>
             </div>
@@ -167,11 +125,8 @@
     </div>
 
     <div class="card mb-5">
-        <div class="card-header-custom">
-            <span>LIVE INTERCEPTION FEED</span>
-            <span class="badge badge-neon">Real-time Encrypted Log</span>
-        </div>
-        <div class="table-container">
+        <div class="card-header-custom">LIVE INTERCEPTION FEED</div>
+        <div class="table-responsive">
             <table class="table table-dark table-hover">
                 <thead>
                     <tr>
@@ -181,14 +136,14 @@
                         <th>Interception Type</th>
                     </tr>
                 </thead>
-                <tbody id="logTableBody">
+                <tbody>
                     {% for log in all_logs %}
                     <tr>
-                        <td class="text-muted">{{ log.timestamp }}</td>
+                        <td class="timestamp-entry">{{ log.timestamp }}</td>
                         <td style="color: var(--neon-cyan);">{{ log.ip }}</td>
-                        <td><code style="color: #ff9d00;">{{ log.payload[:60] }}{% if log.payload|length > 60 %}...{% endif %}</code></td>
+                        <td><code style="color: #ff9d00;">{{ log.payload[:60] }}...</code></td>
                         <td>
-                            <span class="badge" style="border: 1px solid #ff4d4d; color: #ff4d4d; font-size: 0.65rem;">
+                            <span class="badge" style="border: 1px solid #ff4d4d; color: #ff4d4d;">
                                 {{ log.type }}
                             </span>
                         </td>
@@ -196,7 +151,7 @@
                     {% else %}
                     <tr>
                         <td colspan="4" class="text-center py-5 text-muted italic">
-                            No malicious activity detected in current session.
+                            No malicious activity detected.
                         </td>
                     </tr>
                     {% endfor %}
@@ -207,59 +162,31 @@
 </div>
 
 <script>
-    // Pulling data from Flask main.py
     const chartData = {{ chart_data | tojson }};
-    
     Chart.defaults.color = '#888';
     Chart.defaults.font.family = 'Orbitron';
 
-    // 1. Doughnut Chart (Threat Types)
-    const ctxType = document.getElementById('typeChart').getContext('2d');
-    new Chart(ctxType, {
+    new Chart(document.getElementById('typeChart'), {
         type: 'doughnut',
         data: {
             labels: chartData.type_labels,
             datasets: [{
                 data: chartData.type_values,
-                backgroundColor: ['#00ffcc', '#00ccaa', '#009988', '#006655', '#1a1a1a'],
-                borderWidth: 0,
-                hoverOffset: 10
+                backgroundColor: ['#00ffcc', '#00ccaa', '#009988', '#006655'],
+                borderWidth: 0
             }]
         },
-        options: {
-            maintainAspectRatio: false,
-            cutout: '75%',
-            plugins: {
-                legend: { position: 'bottom', labels: { boxWidth: 12, padding: 15 } }
-            }
-        }
+        options: { maintainAspectRatio: false, cutout: '75%' }
     });
 
-    // 2. Bar Chart (IP Sources)
-    const ctxIP = document.getElementById('ipChart').getContext('2d');
-    new Chart(ctxIP, {
+    new Chart(document.getElementById('ipChart'), {
         type: 'bar',
         data: {
             labels: chartData.ip_labels,
-            datasets: [{
-                label: 'Attacks',
-                data: chartData.ip_values,
-                backgroundColor: '#00ffcc',
-                borderRadius: 4
-            }]
+            datasets: [{ data: chartData.ip_values, backgroundColor: '#00ffcc' }]
         },
-        options: {
-            maintainAspectRatio: false,
-            scales: {
-                y: { beginAtZero: true, grid: { color: '#222' } },
-                x: { grid: { display: false } }
-            },
-            plugins: {
-                legend: { display: false }
-            }
-        }
+        options: { maintainAspectRatio: false, plugins: { legend: { display: false } } }
     });
 </script>
-
 </body>
 </html>
