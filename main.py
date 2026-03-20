@@ -1,46 +1,59 @@
-from flask import Flask, render_template, request, render_template_string
-import ids_logic
 import os
+import re
+from flask import Flask, render_template, request
+from pymongo import MongoClient
+from datetime import datetime
 
-# Initialize Flask with the correct template folder
-app = Flask(__name__, template_folder='templates')
+app = Flask(__name__)
 
-@app.route('/')
-def home():
-    return render_template('xss_both_demo.html')
+# --- MONGODB CONNECTION ---
+# No more db.json! We fetch the link from Render's Environment Variables
+MONGO_URI = os.getenv("MONGO_URI")
+client = MongoClient(MONGO_URI)
+db = client.ids_database
+logs_collection = db.attack_logs
 
-@app.route('/check')
-def check_xss():
-    user_input = request.args.get('input', '')
-    client_ip = request.remote_addr
-    dest_ip = "127.0.0.1"
+# --- IDS DETECTION LOGIC ---
+def is_xss_attack(payload):
+    """Detects XSS signatures in user input."""
+    patterns = [r"<script.*?>", r"javascript:", r"onload=", r"onerror=", r"<img.*?src="]
+    for pattern in patterns:
+        if re.search(pattern, payload, re.IGNORECASE):
+            return True
+    return False
 
-    # Use the hybrid detection logic
-    is_detected, reason = ids_logic.hybrid_detect(user_input)
-
-    if is_detected:
-        ids_logic.log_attack(client_ip, dest_ip, user_input, reason)
-        return f"""
-        <div style="font-family:sans-serif; background:#220000; color:#ff4444; padding:20px; border:2px solid red;">
-            <h2>🚨 XSS Attack Blocked by IDS!</h2>
-            <p><strong>Detection Method:</strong> {reason}</p>
-            <p><strong>Malicious Payload:</strong> <code>{user_input}</code></p>
-            <a href="/" style="color:white;">Try another test</a>
-        </div>
-        """
+# --- ROUTES ---
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    message = None
+    status_class = "alert-info"
     
-    return f"""
-    <div style="font-family:sans-serif; color:green; padding:20px;">
-        <h3>✅ Input processed safely</h3>
-        <p>Your input: {user_input}</p>
-        <a href="/">Back to home</a>
-    </div>
-    """
+    if request.method == 'POST':
+        user_input = request.form.get('user_input', '')
+        if is_xss_attack(user_input):
+            # SAVE TO MONGODB instead of a file
+            log_entry = {
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "payload": user_input,
+                "ip": request.remote_addr,
+                "status": "Blocked"
+            }
+            logs_collection.insert_one(log_entry)
+            message = "🚨 Security Alert: XSS Attack Blocked & Logged to Cloud!"
+            status_class = "alert-danger"
+        else:
+            message = "✅ Input processed safely."
+            status_class = "alert-success"
+            
+    return render_template('xss_both_demo.html', message=message, status_class=status_class)
 
 @app.route('/dashboard')
 def dashboard():
-    logs = ids_logic.db.all()
-    return render_template('dashboard.html', logs=logs)
+    # FETCH FROM MONGODB (Newest attacks first)
+    all_logs = list(logs_collection.find({}, {'_id': 0}).sort("timestamp", -1))
+    return render_template('dashboard.html', logs=all_logs)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=8000)
+    # Render uses port 10000 by default
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
