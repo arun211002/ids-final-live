@@ -3,38 +3,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IDS Dashboard</title>
+    <title>IDS Security Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #121212; color: white; }
+        .card { background-color: #1e1e1e; border: 1px solid #333; }
+        .table-dark { --bs-table-bg: #1e1e1e; }
+        canvas { max-height: 300px; }
+    </style>
 </head>
-<body class="bg-dark text-white">
-    <div class="container mt-5">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1>🛡️ Cloud Attack Logs</h1>
-            <a href="/" class="btn btn-primary">Home</a>
+<body>
+
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>🛡️ IDS Real-Time Attack Dashboard</h2>
+        <div>
+            <span class="badge bg-danger me-2">Total Attacks: {{ chart_data.total_count }}</span>
+            <a href="/" class="btn btn-outline-light btn-sm">Return Home</a>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-md-6 mb-4">
+            <div class="card p-3">
+                <canvas id="attackTypeChart"></canvas>
+            </div>
         </div>
 
+        <div class="col-md-6 mb-4">
+            <div class="card p-3">
+                <canvas id="ipChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card p-4">
+        <h4 class="mb-3">Recent Security Events</h4>
         <div class="table-responsive">
-            <table class="table table-dark table-striped border">
+            <table class="table table-dark table-hover">
                 <thead>
                     <tr>
-                        <th>Time</th>
-                        <th>Payload</th>
-                        <th>Detection Type</th>
-                        <th>IP Address</th>
+                        <th>Timestamp</th>
+                        <th>Attacker IP</th>
+                        <th>Detection Method</th>
+                        <th>Payload Snippet</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for log in logs %}
                     <tr>
                         <td>{{ log.timestamp }}</td>
-                        <td class="text-warning"><code>{{ log.payload }}</code></td>
-                        <td><span class="badge bg-info">{{ log.type }}</span></td>
-                        <td>{{ log.ip }}</td>
+                        <td><span class="text-info">{{ log.ip }}</span></td>
+                        <td><span class="badge {% if 'Anomaly' in log.type %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ log.type }}</span></td>
+                        <td><code class="text-light">{{ log.payload[:50] }}{% if log.payload|length > 50 %}...{% endif %}</code></td>
+                        <td><span class="text-success font-monospace">BLOCKED</span></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">No attacks detected yet. System is secure.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
     </div>
+</div>
+
+<script>
+    // 1. DATA INJECTION FROM FLASK
+    // This takes the 'chart_data' dictionary from main.py and converts it to JSON
+    const pythonData = {{ chart_data | tojson }};
+
+    // 2. PIE CHART: Detection Types (Signature vs Anomaly)
+    new Chart(document.getElementById("attackTypeChart"), {
+        type: 'pie',
+        data: {
+            labels: pythonData.type_labels,
+            datasets: [{
+                data: pythonData.type_values,
+                backgroundColor: ['#0dcaf0', '#ffc107', '#fd7e14', '#dc3545', '#6610f2'],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            plugins: {
+                legend: { position: 'bottom', labels: { color: "white" } },
+                title: { display: true, text: "Detection Method Distribution", color: "white", font: { size: 16 } }
+            }
+        }
+    });
+
+    // 3. BAR CHART: Top Threat Sources (IPs)
+    new Chart(document.getElementById("ipChart"), {
+        type: 'bar',
+        data: {
+            labels: pythonData.ip_labels,
+            datasets: [{
+                label: 'Attacks per IP',
+                data: pythonData.ip_values,
+                backgroundColor: '#dc3545',
+                borderColor: 'white',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: { beginAtZero: true, ticks: { color: "white" }, grid: { color: "#333" } },
+                x: { ticks: { color: "white" }, grid: { color: "#333" } }
+            },
+            plugins: {
+                legend: { display: false },
+                title: { display: true, text: "Top 5 Attacking IPs", color: "white", font: { size: 16 } }
+            }
+        }
+    });
+</script>
+
 </body>
 </html>
