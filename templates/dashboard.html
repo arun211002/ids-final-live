@@ -3,66 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IDS Security Dashboard</title>
+    <title>MICE IDS | Security Dashboard</title>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&display=swap" rel="stylesheet">
+
     <style>
-        body { background-color: #121212; color: white; }
-        .card { background-color: #1e1e1e; border: 1px solid #333; }
-        .table-dark { --bs-table-bg: #1e1e1e; }
-        canvas { max-height: 300px; }
+        body { 
+            background-color: #0a0a0a; 
+            color: #00ffcc; 
+            font-family: 'Orbitron', sans-serif;
+            background: linear-gradient(rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.85)), 
+                        url("{{ url_for('static', filename='bg.png') }}"); 
+            background-size: cover;
+            background-attachment: fixed;
+        }
+
+        /* --- LOGO STYLING --- */
+        .dashboard-logo {
+            width: 80px;
+            height: auto;
+            filter: drop-shadow(0 0 8px rgba(0, 255, 204, 0.6));
+            margin-right: 15px;
+        }
+
+        .card { 
+            background: rgba(30, 30, 30, 0.9); 
+            border: 1px solid #00ffcc; 
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+
+        .table-dark { 
+            --bs-table-bg: rgba(20, 20, 20, 0.8); 
+            color: #00ffcc;
+            border-color: #333;
+        }
+
+        .badge-threat {
+            background-color: #dc3545;
+            box-shadow: 0 0 10px #dc3545;
+        }
+
+        canvas { max-height: 250px; }
+
+        .btn-outline-light {
+            border-color: #00ffcc;
+            color: #00ffcc;
+        }
+
+        .btn-outline-light:hover {
+            background-color: #00ffcc;
+            color: #000;
+        }
     </style>
 </head>
 <body>
 
-<div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>🛡️ IDS Real-Time Attack Dashboard</h2>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3" style="border-color: #00ffcc !important;">
+        <div class="d-flex align-items-center">
+            <img src="{{ url_for('static', filename='logo.png') }}" alt="MICE" class="dashboard-logo">
+            <div>
+                <h2 class="mb-0">MICE <span style="font-size: 1.2rem; opacity: 0.7;">DASHBOARD</span></h2>
+                <small style="color: #00ff99; letter-spacing: 2px;">REAL-TIME THREAT ANALYTICS</small>
+            </div>
+        </div>
         <div>
-            <span class="badge bg-danger me-2">Total Attacks: {{ chart_data.total_count }}</span>
-            <a href="/" class="btn btn-outline-light btn-sm">Return Home</a>
+            <span class="badge badge-threat px-3 py-2">TOTAL ATTACKS: {{ chart_data.total_count }}</span>
+            <a href="/" class="btn btn-outline-light btn-sm ms-3">RETURN HOME</a>
         </div>
     </div>
 
     <div class="row mb-5">
         <div class="col-md-6 mb-4">
-            <div class="card p-3">
-                <canvas id="attackTypeChart"></canvas>
+            <div class="card p-3 shadow">
+                <canvas id="typeChart"></canvas>
             </div>
         </div>
-
         <div class="col-md-6 mb-4">
-            <div class="card p-3">
+            <div class="card p-3 shadow">
                 <canvas id="ipChart"></canvas>
             </div>
         </div>
     </div>
 
-    <div class="card p-4">
-        <h4 class="mb-3">Recent Security Events</h4>
+    <div class="card shadow p-4 mb-5">
+        <h4 class="mb-4" style="color: #00ff99;">LATEST INTERCEPTIONS</h4>
         <div class="table-responsive">
             <table class="table table-dark table-hover">
                 <thead>
                     <tr>
                         <th>Timestamp</th>
-                        <th>Attacker IP</th>
-                        <th>Detection Method</th>
+                        <th>IP Address</th>
                         <th>Payload Snippet</th>
-                        <th>Status</th>
+                        <th>Method</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for log in logs %}
+                    {% for log in all_logs %}
                     <tr>
                         <td>{{ log.timestamp }}</td>
-                        <td><span class="text-info">{{ log.ip }}</span></td>
-                        <td><span class="badge {% if 'Anomaly' in log.type %}bg-warning text-dark{% else %}bg-danger{% endif %}">{{ log.type }}</span></td>
-                        <td><code class="text-light">{{ log.payload[:50] }}{% if log.payload|length > 50 %}...{% endif %}</code></td>
-                        <td><span class="text-success font-monospace">BLOCKED</span></td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="5" class="text-center text-muted">No attacks detected yet. System is secure.</td>
+                        <td style="color: #0dcaf0;">{{ log.ip }}</td>
+                        <td class="text-truncate" style="max-width: 250px;"><code>{{ log.payload }}</code></td>
+                        <td><span class="badge bg-warning text-dark">{{ log.type }}</span></td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -72,50 +117,48 @@
 </div>
 
 <script>
-    // 1. DATA INJECTION FROM FLASK
-    // This takes the 'chart_data' dictionary from main.py and converts it to JSON
     const pythonData = {{ chart_data | tojson }};
 
-    // 2. PIE CHART: Detection Types (Signature vs Anomaly)
-    new Chart(document.getElementById("attackTypeChart"), {
+    // 1. PIE CHART: Threat Types
+    new Chart(document.getElementById("typeChart"), {
         type: 'pie',
         data: {
             labels: pythonData.type_labels,
             datasets: [{
                 data: pythonData.type_values,
-                backgroundColor: ['#0dcaf0', '#ffc107', '#fd7e14', '#dc3545', '#6610f2'],
-                borderWidth: 1
+                backgroundColor: ['#00ffcc', '#009966', '#dc3545', '#ffc107', '#6610f2'],
+                borderWidth: 0
             }]
         },
         options: {
             plugins: {
-                legend: { position: 'bottom', labels: { color: "white" } },
-                title: { display: true, text: "Detection Method Distribution", color: "white", font: { size: 16 } }
+                legend: { position: 'bottom', labels: { color: "#00ffcc", font: { family: 'Orbitron' } } },
+                title: { display: true, text: "ATTACK TYPE DISTRIBUTION", color: "#00ffcc", font: { size: 14, family: 'Orbitron' } }
             }
         }
     });
 
-    // 3. BAR CHART: Top Threat Sources (IPs)
+    // 2. BAR CHART: Top Threat Sources
     new Chart(document.getElementById("ipChart"), {
         type: 'bar',
         data: {
             labels: pythonData.ip_labels,
             datasets: [{
-                label: 'Attacks per IP',
+                label: 'Interceptions',
                 data: pythonData.ip_values,
-                backgroundColor: '#dc3545',
-                borderColor: 'white',
+                backgroundColor: '#00ffcc',
+                borderColor: '#fff',
                 borderWidth: 1
             }]
         },
         options: {
             scales: {
-                y: { beginAtZero: true, ticks: { color: "white" }, grid: { color: "#333" } },
-                x: { ticks: { color: "white" }, grid: { color: "#333" } }
+                y: { beginAtZero: true, ticks: { color: "#00ffcc" }, grid: { color: "#333" } },
+                x: { ticks: { color: "#00ffcc" }, grid: { color: "#333" } }
             },
             plugins: {
                 legend: { display: false },
-                title: { display: true, text: "Top 5 Attacking IPs", color: "white", font: { size: 16 } }
+                title: { display: true, text: "TOP THREAT SOURCES (IP)", color: "#00ffcc", font: { size: 14, family: 'Orbitron' } }
             }
         }
     });
