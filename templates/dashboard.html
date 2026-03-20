@@ -3,37 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Security Dashboard</title>
+    <title>IDS Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="bg-dark text-white">
     <div class="container mt-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h1 class="h3">📊 Real-Time Attack Logs</h1>
-            <a href="/" class="btn btn-outline-light btn-sm">Home</a>
+            <h1>🛡️ Cloud Attack Logs</h1>
+            <a href="/" class="btn btn-primary">Home</a>
         </div>
 
-        <div class="table-responsive shadow-lg">
-            <table class="table table-dark table-hover border-secondary">
-                <thead class="table-secondary text-dark">
+        <div class="table-responsive">
+            <table class="table table-dark table-striped border">
+                <thead>
                     <tr>
                         <th>Time</th>
-                        <th>Attack Payload</th>
-                        <th>Source IP</th>
-                        <th>Result</th>
+                        <th>Payload</th>
+                        <th>Detection Type</th>
+                        <th>IP Address</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for log in logs %}
                     <tr>
-                        <td><small>{{ log.timestamp }}</small></td>
-                        <td><code class="text-info">{{ log.payload }}</code></td>
+                        <td>{{ log.timestamp }}</td>
+                        <td class="text-warning"><code>{{ log.payload }}</code></td>
+                        <td><span class="badge bg-info">{{ log.type }}</span></td>
                         <td>{{ log.ip }}</td>
-                        <td><span class="badge bg-danger">Blocked</span></td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="4" class="text-center text-muted">No attacks detected yet.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
