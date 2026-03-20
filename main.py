@@ -8,7 +8,7 @@ from collections import Counter
 app = Flask(__name__)
 
 # --- MONGODB CONNECTION ---
-# IMPORTANT: For global access, replace the localhost URI with your MongoDB Atlas Connection String
+# Replace the string below with your MongoDB Atlas URI for global access
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/") 
 
 client = MongoClient(
@@ -19,25 +19,22 @@ client = MongoClient(
 db = client.ids_database
 logs_collection = db.attack_logs
 
-# --- HYBRID DETECTION SYSTEM ---
+# --- IDS DETECTION LOGIC ---
 def detect_intrusion(user_input):
-    # 1. Signature-Based
     signatures = [
         r"<script.*?>", r"javascript:", r"onload=", r"onerror=", 
         r"<img.*?src=", r"alert\(", r"document\.cookie",
         r"SELECT .* FROM", r"UNION SELECT", r"OR '1'='1'", r"DROP TABLE",
         r"window\.location", r"eval\(", r"<iframe>"
     ]
-    
     for pattern in signatures:
         if re.search(pattern, user_input, re.IGNORECASE):
             return True, "Signature Match"
     
-    # 2. Anomaly-Based (Character Density)
     if user_input:
         special_chars = re.findall(r'[<>{}[\ transfer\]\(\)\"\'/\\&%]', user_input)
         if (len(special_chars) / len(user_input)) > 0.35:
-            return True, "High Character Density"
+            return True, "High Character Density Anomaly"
             
     return False, None
 
@@ -51,9 +48,14 @@ def home():
         is_threat, reason = detect_intrusion(user_input)
         
         if is_threat:
-            # Captures the REAL Public IP of the attacker from anywhere in the world
-            user_ip = request.remote_addr
-            
+            # --- GLOBAL IP DETECTION FIX ---
+            # If the app is behind a proxy (like Render), get the real visitor IP
+            if request.headers.getlist("X-Forwarded-For"):
+                user_ip = request.headers.getlist("X-Forwarded-For")[0]
+            else:
+                user_ip = request.remote_addr
+            # -------------------------------
+
             logs_collection.insert_one({
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "ip": user_ip,
@@ -70,23 +72,25 @@ def home():
 
 @app.route('/dashboard')
 def dashboard():
-    # Fetch all logs for the global dashboard
-    all_logs = list(logs_collection.find({}, {'_id': 0}).sort("timestamp", -1))
-    
-    type_counts = Counter(log.get('type', 'Unknown') for log in all_logs)
-    ip_counts = Counter(log.get('ip', 'Unknown') for log in all_logs).most_common(10)
-    
-    chart_data = {
-        "type_labels": list(type_counts.keys()),
-        "type_values": list(type_counts.values()),
-        "ip_labels": [item[0] for item in ip_counts],
-        "ip_values": [item[1] for item in ip_counts],
-        "total_count": len(all_logs)
-    }
-    return render_template('dashboard.html', all_logs=all_logs, chart_data=chart_data)
+    try:
+        # Fetch all logs for the global dashboard
+        all_logs = list(logs_collection.find({}, {'_id': 0}).sort("timestamp", -1))
+        
+        type_counts = Counter(log.get('type', 'Unknown') for log in all_logs)
+        ip_counts = Counter(log.get('ip', 'Unknown') for log in all_logs).most_common(10)
+        
+        chart_data = {
+            "type_labels": list(type_counts.keys()),
+            "type_values": list(type_counts.values()),
+            "ip_labels": [item[0] for item in ip_counts],
+            "ip_values": [item[1] for item in ip_counts],
+            "total_count": len(all_logs)
+        }
+        return render_template('dashboard.html', all_logs=all_logs, chart_data=chart_data)
+    except Exception as e:
+        return f"Dashboard Error: {e}", 500
 
 if __name__ == '__main__':
-    # '0.0.0.0' allows the entire world (via Render/Cloud) to access your app
-    # PORT is assigned dynamically by the hosting provider
+    # Listen on 0.0.0.0 for global access
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
