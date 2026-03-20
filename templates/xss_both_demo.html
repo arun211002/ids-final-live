@@ -9,26 +9,45 @@
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&display=swap" rel="stylesheet">
 
     <style>
+        /* Ensures the background covers the entire screen regardless of device */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: 'Orbitron', sans-serif;
-            padding-top: 80px;
             color: #00ffcc;
-            background: radial-gradient(circle at center, #0a0a0a 0%, #000000 100%);
-            min-height: 100vh;
+            
+            /* --- RESPONSIVE FULL SCREEN BACKGROUND --- */
+            background: linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)), 
+                        url("{{ url_for('static', filename='bg.png') }}"); 
+            background-size: cover;        /* Stretches to fill PC and Mobile */
+            background-position: center;   /* Keeps the center of the image visible */
+            background-attachment: fixed;  /* Prevents background from scrolling */
+            background-repeat: no-repeat;
+            
+            /* Flexbox to perfectly center the card on any screen */
+            display: flex;
+            align-items: center;
+            justify-content: center;
             overflow-x: hidden;
         }
 
-        /* The MICE Watermark Logo from hh.html */
+        /* Responsive Watermark */
         .watermark {
             position: fixed;
             top: 50%;
             left: 50%;
-            width: 600px;
-            height: 600px;
+            width: 80vw;  /* Adjusts based on Screen Width */
+            height: 80vh; /* Adjusts based on Screen Height */
+            max-width: 700px;
+            max-height: 700px;
             transform: translate(-50%, -50%);
-            background: url('https://drive.google.com/uc?export=view&id=1zxOeBsJ4BDf0edEbY1D2') no-repeat center;
+            background: url("{{ url_for('static', filename='logo.png') }}") no-repeat center;
             background-size: contain;
-            opacity: 0.08;
+            opacity: 0.05;
             z-index: -1;
         }
 
@@ -47,7 +66,9 @@
             border-radius: 20px;
             box-shadow: 0 0 25px rgba(0, 255, 204, 0.15);
             backdrop-filter: blur(12px);
-            padding: 30px;
+            padding: 40px;
+            width: 100%;
+            max-width: 450px; /* Limits width on PC so it doesn't look stretched */
         }
 
         .form-control {
@@ -56,10 +77,6 @@
             color: #00ffcc !important;
             border-radius: 8px;
             padding: 12px;
-        }
-
-        .form-control::placeholder {
-            color: rgba(0, 255, 204, 0.4);
         }
 
         .btn-mice {
@@ -76,7 +93,6 @@
         .btn-mice:hover {
             box-shadow: 0 0 20px rgba(0, 255, 204, 0.6);
             transform: translateY(-2px);
-            color: #000;
         }
 
         .alert {
@@ -87,8 +103,8 @@
             margin-bottom: 25px;
         }
 
-        .alert-danger { color: #ff4d4d; border-color: #ff4d4d; box-shadow: 0 0 15px rgba(255, 77, 77, 0.2); }
-        .alert-success { color: #00ffcc; border-color: #00ffcc; box-shadow: 0 0 15px rgba(0, 255, 204, 0.2); }
+        .alert-danger { color: #ff4d4d; border-color: #ff4d4d; }
+        .alert-success { color: #00ffcc; border-color: #00ffcc; }
 
         .dashboard-link {
             display: inline-block;
@@ -97,12 +113,6 @@
             text-decoration: none;
             font-size: 0.75rem;
             letter-spacing: 2px;
-            transition: 0.3s;
-        }
-
-        .dashboard-link:hover {
-            color: #fff;
-            text-shadow: 0 0 10px #00ff99;
         }
     </style>
 </head>
@@ -110,14 +120,14 @@
 
     <div class="watermark"></div>
 
-    <div class="container text-center" style="max-width: 450px;">
+    <div class="container d-flex flex-column align-items-center">
         
         <h1 class="fw-bold mb-0" style="letter-spacing: 3px;">MICE</h1>
         <p class="mb-1" style="font-size: 0.8rem; color: #00ffcc;">XSS SECURE IDS</p>
         <div class="tagline">let’s seek</div>
         
         {% if message %}
-        <div class="alert {{ status_class }}">
+        <div class="alert {{ status_class }} w-100" style="max-width: 450px;">
             {{ message }}
         </div>
         {% endif %}
