@@ -7,6 +7,7 @@ from datetime import datetime
 app = Flask(__name__)
 
 # --- MONGODB CONNECTION ---
+# This pulls the URI from your Render Environment Variables
 MONGO_URI = os.getenv("MONGO_URI")
 client = MongoClient(MONGO_URI)
 db = client.ids_database
@@ -14,26 +15,27 @@ logs_collection = db.attack_logs
 
 # --- HYBRID DETECTION SYSTEM ---
 def detect_intrusion(user_input):
-    # 1. SIGNATURE-BASED (Patterns)
+    # 1. SIGNATURE-BASED DETECTION
+    # Catching known attack patterns (XSS, SQLi, Scripting)
     signatures = [
         r"<script.*?>", r"javascript:", r"onload=", r"onerror=", 
         r"<img.*?src=", r"alert\(", r"document\.cookie",
-        r"SELECT .* FROM", r"UNION SELECT", r"OR '1'='1'" # Added SQLi signatures
+        r"SELECT .* FROM", r"UNION SELECT", r"OR '1'='1'", r"DROP TABLE"
     ]
     
     for pattern in signatures:
         if re.search(pattern, user_input, re.IGNORECASE):
-            return True, "Signature Detected"
+            return True, "Signature: Malicious Pattern Detected"
 
-    # 2. ANOMALY-BASED (Behavioral)
-    # Attackers often use very long payloads or excessive special characters
+    # 2. ANOMALY-BASED DETECTION
+    # Catching suspicious behavior (too long or too many symbols)
     special_char_count = len(re.findall(r"[<>{}\[\]()=;']", user_input))
     
-    if len(user_input) > 100:
-        return True, "Anomaly: Input Too Long"
+    if len(user_input) > 120:
+        return True, "Anomaly: Payload Length Too High"
     
-    if special_char_count > 5:
-        return True, "Anomaly: High Special Character Density"
+    if special_char_count > 8:
+        return True, "Anomaly: Excessive Special Characters"
 
     return False, None
 
@@ -45,27 +47,35 @@ def index():
     
     if request.method == 'POST':
         user_input = request.form.get('user_input', '')
+        
+        # Run the detection
         is_attack, reason = detect_intrusion(user_input)
         
+        # FIX: Getting the Real User IP from Render's Proxy
+        user_ip = request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0]
+
         if is_attack:
             log_entry = {
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                 "payload": user_input,
-                "ip": request.remote_addr,
+                "ip": user_ip,
                 "type": reason,
                 "status": "Blocked"
             }
+            # Save to Cloud
             logs_collection.insert_one(log_entry)
-            message = f"🚨 Security Alert: {reason}!"
+            
+            message = f"🚨 {reason}!"
             status_class = "alert-danger"
         else:
-            message = "✅ Input processed safely."
+            message = "✅ Input safely processed."
             status_class = "alert-success"
             
     return render_template('xss_both_demo.html', message=message, status_class=status_class)
 
 @app.route('/dashboard')
 def dashboard():
+    # Fetch all logs from MongoDB, sorted by most recent first
     all_logs = list(logs_collection.find({}, {'_id': 0}).sort("timestamp", -1))
     return render_template('dashboard.html', logs=all_logs)
 
