@@ -4,7 +4,8 @@ from flask import Flask, render_template, request
 from pymongo import MongoClient
 from datetime import datetime
 from collections import Counter
-
+from dotenv import load_dotenv
+load_dotenv()
 app = Flask(__name__)
 
 # --- MONGODB CONNECTION (Atlas Ready) ---
@@ -19,7 +20,7 @@ try:
         serverSelectionTimeoutMS=2000,
         connectTimeoutMS=2000
     )
-    db = client.test_ids_database
+    db = client.ids_database
     logs_collection = db.attack_logs
     # Ping the database to ensure it's actually awake
     client.admin.command('ping')
