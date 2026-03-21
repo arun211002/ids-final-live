@@ -19,7 +19,8 @@ SIGNATURE_RULES = [
     (
         "Signature Detected",
         r"(\.\./|\.\.\\|/etc/passwd|boot\.ini|cmd\.exe|/bin/sh|\bcat\s+/etc/passwd\b|"
-        r"\|\||&&|;\s*\w+|`[^`]*`|\$\()"
+        r"(?:\|\||&&|;)\s*(?:cat|ls|whoami|id|bash|sh|cmd|powershell|curl|wget|python|perl|nc|netstat)\b|"
+        r"`[^`]+`|\$\()"
     ),
 ]
 
