@@ -7,20 +7,34 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root { --neon: #00ffcc; --dark: #060606; }
+        :root { --neon: #00ffcc; --dark: #060606; --info-blue: #0dcaf0; }
         body { 
             background: linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.9)), 
                         url("{{ url_for('static', filename='IMG_20260320_141054.png') }}");
             background-size: cover; background-attachment: fixed;
             color: #fff; font-family: 'Orbitron', sans-serif; 
         }
-        .navbar { border-bottom: 2px solid var(--neon); background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); }
+        .navbar { border-bottom: 2px solid var(--neon); background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); }
         .card { background: rgba(17, 17, 17, 0.9); border: 1px solid #333; border-radius: 12px; }
         .card-header { color: var(--neon); border-bottom: 1px solid #333; font-weight: bold; }
         .table-scroll { max-height: 400px; overflow-y: auto; }
         .ts-white { color: #ffffff !important; font-weight: bold; }
         .ip-neon { color: var(--neon) !important; }
-        .badge-threat { font-size: 0.7rem; text-transform: uppercase; }
+        
+        /* Pulse Button Animation */
+        .btn-neon {
+            border: 1px solid var(--neon);
+            color: var(--neon);
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            transition: 0.3s;
+        }
+        .btn-neon:hover {
+            background: var(--neon);
+            color: #000;
+            box-shadow: 0 0 15px var(--neon);
+        }
     </style>
 </head>
 <body>
@@ -32,34 +46,49 @@
                  style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--neon); margin-right: 15px;">
             <h3 class="mb-0">MICE <span class="fw-light text-info">IDS</span></h3>
         </div>
-        <span class="badge border border-info text-info px-3 py-2">GLOBAL THREATS: {{ chart_data.total_count }}</span>
+
+        <div class="d-flex align-items-center gap-3">
+            <a href="/" class="btn btn-outline-info btn-sm btn-neon px-3">
+                <i class="bi bi-arrow-left"></i> ← Back to Portal
+            </a>
+            <span class="badge border border-info text-info px-3 py-2">GLOBAL THREATS: {{ chart_data.total_count }}</span>
+        </div>
     </div>
 </nav>
 
 <div class="container">
     <div class="row g-4 mb-4">
         <div class="col-md-6">
-            <div class="card p-3"><canvas id="typeChart"></canvas></div>
+            <div class="card p-3">
+                <div class="text-center mb-2 small text-uppercase">Threat Distribution</div>
+                <canvas id="typeChart"></canvas>
+            </div>
         </div>
         <div class="col-md-6">
-            <div class="card p-3"><canvas id="ipChart"></canvas></div>
+            <div class="card p-3">
+                <div class="text-center mb-2 small text-uppercase">Top Attack Origins (World IPs)</div>
+                <canvas id="ipChart"></canvas>
+            </div>
         </div>
     </div>
 
-    <div class="card">
-        <div class="card-header p-3">LIVE INTERCEPTION LOGS</div>
+    <div class="card mb-5">
+        <div class="card-header p-3 d-flex justify-content-between">
+            <span>LIVE INTERCEPTION LOGS</span>
+            <small class="text-secondary">Auto-Updating Active</small>
+        </div>
         <div class="table-scroll">
             <table class="table table-dark table-hover mb-0">
                 <thead class="sticky-top bg-dark">
-                    <tr><th>Time</th><th>Origin IP</th><th>Payload</th><th>Category</th></tr>
+                    <tr><th>Time</th><th>Origin IP</th><th>Payload Snippet</th><th>Category</th></tr>
                 </thead>
                 <tbody>
                     {% for log in all_logs %}
                     <tr>
-                        <td class="ts-white">{{ log.timestamp }}</td>
+                        <td class="ts-white text-nowrap">{{ log.timestamp }}</td>
                         <td class="ip-neon">{{ log.ip }}</td>
-                        <td><code class="text-warning">{{ log.payload[:60] }}</code></td>
-                        <td><span class="badge bg-danger badge-threat">{{ log.type }}</span></td>
+                        <td><code class="text-warning">{{ log.payload[:50] }}{% if log.payload|length > 50 %}...{% endif %}</code></td>
+                        <td><span class="badge bg-danger" style="font-size: 0.7rem;">{{ log.type }}</span></td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -77,18 +106,39 @@
         type: 'doughnut',
         data: {
             labels: data.type_labels,
-            datasets: [{ data: data.type_values, backgroundColor: ['#00ffcc', '#009988', '#ff3366'], borderWidth: 0 }]
+            datasets: [{ 
+                data: data.type_values, 
+                backgroundColor: ['#00ffcc', '#0dcaf0', '#ff3366'], 
+                borderWidth: 0,
+                hoverOffset: 10
+            }]
         },
-        options: { plugins: { legend: { labels: { color: '#fff' } } } }
+        options: { 
+            responsive: true,
+            plugins: { legend: { position: 'bottom', labels: { color: '#fff', padding: 20 } } } 
+        }
     });
 
     new Chart(ctx2, {
         type: 'bar',
         data: {
             labels: data.ip_labels,
-            datasets: [{ label: 'Attacks', data: data.ip_values, backgroundColor: '#00ffcc' }]
+            datasets: [{ 
+                label: 'Interceptions', 
+                data: data.ip_values, 
+                backgroundColor: '#0dcaf0',
+                borderColor: '#00ffcc',
+                borderWidth: 1
+            }]
         },
-        options: { scales: { y: { beginAtZero: true, ticks: { color: '#fff' } }, x: { ticks: { color: '#fff' } } } }
+        options: { 
+            responsive: true,
+            scales: { 
+                y: { beginAtZero: true, grid: { color: '#222' }, ticks: { color: '#fff' } }, 
+                x: { grid: { display: false }, ticks: { color: '#fff' } } 
+            },
+            plugins: { legend: { display: false } }
+        }
     });
 </script>
 </body>
