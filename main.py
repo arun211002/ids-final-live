@@ -1,10 +1,10 @@
 import os
-import re
 from flask import Flask, render_template, request
 from pymongo import MongoClient
 from datetime import datetime
 from collections import Counter
 from dotenv import load_dotenv
+from ids_logic import detect_intrusion
 load_dotenv()
 app = Flask(__name__)
 
@@ -28,30 +28,6 @@ try:
 except Exception as e:
     print(f"DATABASE CONNECTION ERROR: {e}")
     print("Ensure MongoDB Compass is CONNECTED or Atlas URI is correct.")
-
-# --- HYBRID DETECTION ENGINE ---
-def detect_intrusion(user_input):
-    # 1. Signature-Based Detection
-    signatures = [
-        r"<script.*?>", r"javascript:", r"onload=", r"onerror=", 
-        r"<img.*?src=", r"alert\(", r"document\.cookie",
-        r"SELECT .* FROM", r"UNION SELECT", r"OR '1'='1'", r"DROP TABLE",
-        r"window\.location", r"eval\(", r"<iframe>"
-    ]
-    
-    for pattern in signatures:
-        if re.search(pattern, user_input, re.IGNORECASE):
-            return True, "Signature Match"
-    
-    # 2. Anomaly-Based Detection (High Character Density)
-    if user_input and len(user_input) > 0:
-        # Detects clusters of symbols like < > / \ % & ^
-        special_chars = re.findall(r'[<>{}[\ transfer\]\(\)\"\'/\\&%]', user_input)
-        density = len(special_chars) / len(user_input)
-        if density > 0.35:
-            return True, "High Character Density Anomaly"
-            
-    return False, None
 
 # --- ROUTE: ATTACK PORTAL (HOME) ---
 @app.route('/', methods=['GET', 'POST'])
