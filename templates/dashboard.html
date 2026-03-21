@@ -9,12 +9,41 @@
     <style>
         :root { --neon: #00ffcc; --dark: #060606; --info-blue: #0dcaf0; }
         body { 
-            background: linear-gradient(rgba(0,0,0,0.9), rgba(0,0,0,0.9)), 
-                        url("{{ url_for('static', filename='IMG_20260320_141054.png') }}");
-            background-size: cover; background-attachment: fixed;
             color: #fff; font-family: 'Orbitron', sans-serif; 
+            min-height: 100vh;
+            margin: 0;
+            position: relative;
+            background: #030507;
+        }
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -2;
+            background: url("{{ url_for('static', filename='IMG_20260320_141054.png') }}") center/cover no-repeat;
+            filter: brightness(1.25) contrast(1.3) saturate(1.1);
+            transform: scale(1.02);
+        }
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45));
         }
         .navbar { border-bottom: 2px solid var(--neon); background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); }
+        .brand-wrap { text-align: center; }
+        .brand-logo {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 2px solid var(--neon);
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.6);
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+        .brand-title { letter-spacing: 1px; }
+        .nav-actions { justify-content: center; }
         .card { background: rgba(17, 17, 17, 0.9); border: 1px solid #333; border-radius: 12px; }
         .card-header { color: var(--neon); border-bottom: 1px solid #333; font-weight: bold; }
         .table-scroll { max-height: 400px; overflow-y: auto; }
@@ -35,19 +64,25 @@
             color: #000;
             box-shadow: 0 0 15px var(--neon);
         }
+
+        @media (max-width: 767px) {
+            .brand-logo {
+                width: 60px;
+                height: 60px;
+            }
+        }
     </style>
 </head>
 <body>
 
 <nav class="navbar py-3 mb-4">
-    <div class="container d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center">
-            <img src="{{ url_for('static', filename='IMG_20260320_141054.png') }}" 
-                 style="width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--neon); margin-right: 15px;">
-            <h3 class="mb-0">MICE <span class="fw-light text-info">IDS</span></h3>
+    <div class="container">
+        <div class="brand-wrap mb-3">
+            <img src="{{ url_for('static', filename='IMG_20260320_141054.png') }}" class="brand-logo" alt="MICE Logo">
+            <h3 class="mb-0 brand-title">MICE <span class="fw-light text-info">IDS</span></h3>
         </div>
 
-        <div class="d-flex align-items-center gap-3">
+        <div class="d-flex flex-wrap align-items-center gap-3 nav-actions">
             <a href="/" class="btn btn-outline-info btn-sm btn-neon px-3">
                 <i class="bi bi-arrow-left"></i> ← Back to Portal
             </a>
