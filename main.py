@@ -4,13 +4,14 @@ from flask import Flask, render_template, request
 from pymongo import MongoClient
 from datetime import datetime
 from collections import Counter
-
+from dotenv import load_dotenv
+load_dotenv()
 app = Flask(__name__)
 
 # --- MONGODB CONNECTION (Atlas Ready) ---
 # If you are on Render, it uses the Environment Variable.
 # If you are local, it falls back to localhost.
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/") 
+MONGO_URI = os.getenv("MONGO_URI") 
 
 try:
     # 2-second timeout prevents the "infinite circling" if DB is unreachable
@@ -23,9 +24,9 @@ try:
     logs_collection = db.attack_logs
     # Ping the database to ensure it's actually awake
     client.admin.command('ping')
-    print("✅ DATABASE CONNECTED SUCCESSFULLY")
+    print("DATABASE CONNECTED SUCCESSFULLY")
 except Exception as e:
-    print(f"❌ DATABASE CONNECTION ERROR: {e}")
+    print(f"DATABASE CONNECTION ERROR: {e}")
     print("Ensure MongoDB Compass is CONNECTED or Atlas URI is correct.")
 
 # --- HYBRID DETECTION ENGINE ---

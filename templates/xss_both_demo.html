@@ -15,17 +15,32 @@
         }
 
         body { 
-            background: linear-gradient(rgba(0,0,0,0.92), rgba(0,0,0,0.92)), 
-                        url("{{ url_for('static', filename='IMG_20260320_141054.png') }}");
-            background-size: cover; 
-            background-attachment: fixed;
-            background-position: center;
             color: #fff; 
             font-family: 'Orbitron', sans-serif;
             min-height: 100vh;
             margin: 0;
             display: flex;
             flex-direction: column;
+            position: relative;
+            background: #030507;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: url("{{ url_for('static', filename='IMG_20260320_141054.png') }}") center/cover no-repeat;
+            filter: brightness(0.5) contrast(0.5) saturate(0.5);
+            transform: scale(1);
+        }
+
+        body::after {
+            content: "";
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.45));
         }
 
         /* Centered Navbar */
@@ -41,6 +56,16 @@
             font-weight: bold; 
             letter-spacing: 2px;
             text-transform: uppercase;
+        }
+
+        .brand-logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: 3px solid var(--neon);
+            box-shadow: 0 0 15px var(--neon);
+            margin-bottom: 15px;
+            display: inline-block;
         }
 
         /* Cyberpunk Card Styling */
@@ -115,6 +140,13 @@
             font-weight: bold;
             border-left: 5px solid;
         }
+
+        @media (max-width: 767px) {
+            .brand-logo {
+                width: 64px;
+                height: 64px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -124,7 +156,7 @@
         <div class="text-center">
             <img src="{{ url_for('static', filename='IMG_20260320_141054.png') }}" 
                  alt="MICE Logo"
-                 style="width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--neon); box-shadow: 0 0 15px var(--neon); margin-bottom: 15px;">
+                 class="brand-logo">
             <h3 class="mb-0 nav-brand-text">MICE <span class="text-info">IDS</span> Portal</h3>
             <p class="text-secondary small mt-1">Global Intrusion Detection System</p>
         </div>
