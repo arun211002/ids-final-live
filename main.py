@@ -114,7 +114,12 @@ def dashboard():
     
     return render_template('dashboard.html', all_logs=all_logs, chart_data=chart_data)
 
+# if __name__ == '__main__':
+#     # PORT is dynamic for Render; 0.0.0.0 listens to the entire world
+#     port = int(os.environ.get("PORT", 5000))
+#     app.run(host='0.0.0.0', port=port, debug=False)
+
 if __name__ == '__main__':
-    # PORT is dynamic for Render; 0.0.0.0 listens to the entire world
-    port = int(os.environ.get("PORT", 5000))
+    # Hugging Face defaults to port 7860
+    port = int(os.environ.get("PORT", 7860)) 
     app.run(host='0.0.0.0', port=port, debug=False)
