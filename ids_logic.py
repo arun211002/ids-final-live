@@ -1,8 +1,14 @@
-from tinydb import TinyDB
-from datetime import datetime
 import re
+import os
+from datetime import datetime
+from pymongo import MongoClient
 
-db = TinyDB("db.json")
+# 1. Setup MongoDB Connection
+# Replace with your actual URI or use an environment variable
+MONGO_URI = "mongodb+srv://<username>:<password>@cluster0.abcde.mongodb.net/?retryWrites=true&w=majority"
+client = MongoClient(MONGO_URI)
+db = client['ids_database']
+logs_collection = db['attack_logs']
 
 def detect_signature_xss(payload: str):
     patterns = [
@@ -21,7 +27,7 @@ def score_anomaly(payload: str):
     # Anomaly 1: High length
     if len(payload) > 50: score += 2
     
-    # Anomaly 2: Special character density (XSS specific)
+    # Anomaly 2: Special character density
     special_chars = re.findall(r'[<>{}\[\]\(\)\"\'/\\&%]', payload)
     if len(payload) > 0:
         density = len(special_chars) / len(payload)
@@ -44,12 +50,15 @@ def hybrid_detect(payload: str):
     return False, "Safe"
 
 def log_attack(src_ip, dest_ip, payload, method):
-    """Fixed: Now accepts 4 arguments to prevent TypeError"""
-    db.insert({
-        "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    """Log the attack details to MongoDB Atlas"""
+    log_entry = {
+        "time": datetime.now(), # MongoDB stores native datetime objects well
         "src_ip": src_ip,
         "dest_ip": dest_ip,
         "payload": payload,
         "method": method,
         "status": "Blocked"
-    })
+    }
+    # Insert into MongoDB
+    logs_collection.insert_one(log_entry)
+    print(f"[!] Alert: {method} logged to MongoDB.")
